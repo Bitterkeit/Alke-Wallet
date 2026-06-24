@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alke Wallet - Bienvenido</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: #0a0a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .landing-card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+        .landing-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00C9A7, #4A6CF7);
+            border-radius: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            box-shadow: 0 12px 40px rgba(0,201,167,0.3);
+            margin-bottom: 20px;
+        }
+        .landing-title {
+            color: white;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .landing-title span {
+            background: linear-gradient(135deg, #00C9A7, #4A6CF7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .landing-sub {
+            color: rgba(255,255,255,0.4);
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .btn-landing {
+            background: linear-gradient(135deg, #00C9A7, #4A6CF7);
+            border: none;
+            border-radius: 12px;
+            padding: 14px 40px;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-landing:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,201,167,0.35);
+            color: white;
+        }
+        .landing-footer {
+            color: rgba(255,255,255,0.2);
+            font-size: 13px;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-card">
+        <div class="landing-icon"><i class="fas fa-wallet"></i></div>
+        <div class="landing-title">Alke <span>Wallet</span></div>
+        <div class="landing-sub">Tu billetera digital, simple y segura.</div>
+        <a href="login.html" class="btn-landing">
+            <i class="fas fa-sign-in-alt" style="margin-right: 10px;"></i>Ingresar
+        </a>
+        <div class="landing-footer">Proyecto educativo · Módulo 2 Front-end</div>
+    </div>
+
+    <script>
+        // Redirigir si ya hay sesión
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'menu.html';
+        }
+    </script>
+</body>
+</html>

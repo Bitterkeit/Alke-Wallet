@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alke Wallet - Últimos Movimientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="transactions-wrapper">
+        <div class="transactions-card">
+            <a href="menu.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <div class="page-title"><i class="fas fa-history"></i> Últimos Movimientos</div>
+            <div class="page-sub">Historial completo de transacciones</div>
+
+            <div class="filter-group">
+                <label for="filterType"><i class="fas fa-filter" style="margin-right: 4px;"></i>Filtrar:</label>
+                <select class="filter-select" id="filterType">
+                    <option value="all">Todos los movimientos</option>
+                    <option value="deposito">Depósitos</option>
+                    <option value="envio">Envíos</option>
+                    <option value="recepcion">Recepciones</option>
+                    <option value="retiro">Retiros</option>
+                </select>
+            </div>
+
+            <div class="transaction-counter">
+                Mostrando <span id="visibleCount">0</span> transacciones
+            </div>
+
+            <div class="list-group" id="transactionList"></div>
+
+            <a href="menu.html" class="btn-menu">
+                <i class="fas fa-home" style="margin-right: 8px;"></i>Menú Principal
+            </a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/contacts.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const user = window.Alke.data.usuarioActual();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const movimientos = user.movimientos || [];
+
+            function getTipoLabel(tipo) {
+                const tipos = {
+                    'deposito': 'Depósito',
+                    'envio': 'Envío',
+                    'recepcion': 'Recepción',
+                    'retiro': 'Retiro'
+                };
+                return tipos[tipo] || tipo;
+            }
+
+            function getIcono(tipo) {
+                const iconos = {
+                    'deposito': 'fa-arrow-down',
+                    'envio': 'fa-paper-plane',
+                    'recepcion': 'fa-arrow-down',
+                    'retiro': 'fa-arrow-up'
+                };
+                return iconos[tipo] || 'fa-circle';
+            }
+
+            function getIconClass(tipo) {
+                const clases = {
+                    'deposito': 'deposito',
+                    'envio': 'transferencia',
+                    'recepcion': 'deposito',
+                    'retiro': 'compra'
+                };
+                return clases[tipo] || 'deposito';
+            }
+
+            function renderTransactions(filter) {
+                const list = $('#transactionList');
+                list.empty();
+
+                let filtered = movimientos;
+                if (filter !== 'all') {
+                    filtered = movimientos.filter(m => m.tipo === filter);
+                }
+
+                if (filtered.length === 0) {
+                    list.html(`
+                        <div class="no-transactions">
+                            <i class="fas fa-inbox"></i>
+                            <p>No hay transacciones de este tipo</p>
+                        </div>
+                    `);
+                    $('#visibleCount').text(0);
+                    return;
+                }
+
+                // Ordenar de más reciente a más antiguo
+                const sorted = [...filtered].reverse();
+
+                sorted.forEach(m => {
+                    const isIngreso = m.tipo === 'deposito' || m.tipo === 'recepcion';
+                    const sign = isIngreso ? '+' : '-';
+                    const cls = isIngreso ? 'positive' : 'negative';
+                    const iconClass = getIconClass(m.tipo);
+                    const date = new Date(m.ts).toLocaleDateString('es-CL');
+                    const time = new Date(m.ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+                    const item = $(`
+                        <div class="list-group-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon ${iconClass}">
+                                    <i class="fas ${getIcono(m.tipo)}"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-name">${m.detalle}</div>
+                                    <div class="transaction-date">${date} - ${time}</div>
+                                    <span class="transaction-badge">${getTipoLabel(m.tipo)}</span>
+                                </div>
+                            </div>
+                            <div class="transaction-amount ${cls}">
+                                ${sign}$${m.monto.toLocaleString()}
+                            </div>
+                        </div>
+                    `);
+                    list.append(item);
+                });
+
+                $('#visibleCount').text(filtered.length);
+            }
+
+            $('#filterType').change(function() {
+                renderTransactions($(this).val());
+            });
+
+            renderTransactions('all');
+        });
+    </script>
+</body>
+</html>

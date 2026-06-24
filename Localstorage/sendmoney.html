@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alke Wallet - Enviar Dinero</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="send-wrapper">
+        <div class="send-card">
+            <a href="menu.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <div class="page-title"><i class="fas fa-paper-plane"></i> Enviar Dinero</div>
+            <div class="page-sub">Transfiere fondos a tus contactos</div>
+
+            <div class="current-balance">
+                <div class="label">Saldo disponible</div>
+                <div class="amount" id="currentBalance">$0 CLP</div>
+            </div>
+
+            <form id="searchForm">
+                <div class="form-group">
+                    <label><i class="fas fa-search" style="margin-right: 6px;"></i>Buscar contacto</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        </div>
+                        <input type="text" class="form-control" id="searchContact" placeholder="Nombre, CBU, alias...">
+                        <div class="input-group-append">
+                            <button class="btn-search" type="submit"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <button class="btn-add" id="showAddContactBtn">
+                <i class="fas fa-user-plus" style="margin-right: 8px;"></i>Agregar contacto
+            </button>
+
+            <div class="add-contact-form" id="addContactForm">
+                <h5><i class="fas fa-user-plus" style="color: #00C9A7; margin-right: 8px;"></i>Nuevo Contacto</h5>
+                <form id="newContactForm">
+                    <div class="form-group">
+                        <label>Nombre completo</label>
+                        <input type="text" class="form-control" id="newName" placeholder="Nombre y apellido" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CBU (22 dígitos)</label>
+                        <input type="text" class="form-control" id="newCbu" placeholder="CBU del contacto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alias</label>
+                        <input type="text" class="form-control" id="newAlias" placeholder="Alias del contacto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Banco</label>
+                        <input type="text" class="form-control" id="newBank" placeholder="Nombre del banco" required>
+                    </div>
+                    <div class="alert-container" id="addContactAlert"></div>
+                    <button type="submit" class="btn-deposit" style="background: linear-gradient(135deg, #00C9A7, #4A6CF7);">
+                        <i class="fas fa-save"></i> Guardar contacto
+                    </button>
+                    <button type="button" class="btn btn-secondary w-100 mt-2" style="background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);" id="cancelAddContact">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </form>
+            </div>
+
+            <h5 style="color: rgba(255,255,255,0.5); font-size: 14px; margin: 20px 0 12px;">
+                <i class="fas fa-address-book" style="margin-right: 8px;"></i>Mis Contactos
+            </h5>
+
+            <div id="contactList"></div>
+
+            <div class="amount-input-group" id="amountInputGroup">
+                <div class="form-group">
+                    <label for="sendAmount"><i class="fas fa-money-bill-wave" style="margin-right: 6px;"></i>Monto a enviar</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" class="form-control" id="sendAmount" placeholder="0" min="1" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-send" id="sendMoneyBtn" disabled>
+                <i class="fas fa-arrow-right" style="margin-right: 8px;"></i>Enviar dinero
+            </button>
+
+            <div class="confirmation-message" id="confirmationMessage">
+                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                ¡Envío exitoso a <strong id="receiverName"></strong>!
+            </div>
+
+            <a href="menu.html" class="btn-menu">
+                <i class="fas fa-home" style="margin-right: 8px;"></i>Menú Principal
+            </a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/contacts.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const user = window.Alke.data.usuarioActual();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            let balance = user.saldo || 0;
+            let selectedContact = null;
+            let contacts = user.contactos || [];
+
+            $('#currentBalance').text(`$${balance.toLocaleString()} CLP`);
+
+            function renderContacts() {
+                const list = $('#contactList');
+                list.empty();
+                if (contacts.length === 0) {
+                    list.html('<p style="color: rgba(255,255,255,0.3); font-size: 14px;">Aún no tienes contactos.</p>');
+                    return;
+                }
+                contacts.forEach((c, index) => {
+                    const item = $(`
+                        <div class="contact-item" data-index="${index}">
+                            <div class="contact-name">${c.nombre}</div>
+                            <div class="contact-details">CBU: ${c.cuenta || 'N/A'} | Alias: ${c.alias || 'N/A'}</div>
+                            <span class="contact-bank"><i class="fas fa-university"></i> ${c.banco || 'Sin banco'}</span>
+                        </div>
+                    `);
+                    item.click(function() {
+                        $('.contact-item').removeClass('selected');
+                        item.addClass('selected');
+                        selectedContact = index;
+                        $('#amountInputGroup').addClass('show');
+                        $('#sendMoneyBtn').prop('disabled', false).addClass('show');
+                        $('#sendAmount').focus();
+                        $('#confirmationMessage').removeClass('show');
+                    });
+                    list.append(item);
+                });
+            }
+
+            renderContacts();
+
+            function showAlert(container, message, type) {
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                $(container).html(`
+                    <div class="alert ${alertClass} show" role="alert">
+                        <i class="fas ${icon}"></i> ${message}
+                    </div>
+                `);
+                setTimeout(() => {
+                    $(container).find('.alert').fadeOut(300, function() { $(this).remove(); });
+                }, 4000);
+            }
+
+            $('#showAddContactBtn').click(function() {
+                $('#addContactForm').toggleClass('show');
+                $(this).text($('#addContactForm').hasClass('show') ? '✕ Cerrar' : '<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
+                if (!$('#addContactForm').hasClass('show')) {
+                    $('#newContactForm')[0].reset();
+                }
+            });
+
+            $('#cancelAddContact').click(function() {
+                $('#addContactForm').removeClass('show');
+                $('#showAddContactBtn').html('<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
+                $('#newContactForm')[0].reset();
+            });
+
+            $('#newContactForm').submit(function(e) {
+                e.preventDefault();
+                const name = $('#newName').val().trim();
+                const cbu = $('#newCbu').val().trim();
+                const alias = $('#newAlias').val().trim();
+                const bank = $('#newBank').val().trim();
+
+                if (!name || !cbu || !alias || !bank) {
+                    showAlert('#addContactAlert', 'Completa todos los campos.', 'error');
+                    return;
+                }
+
+                const newContact = { nombre: name, cuenta: cbu, alias: alias, banco: bank };
+                contacts.push(newContact);
+                window.Alke.contacts.agregar(name, cbu);
+
+                renderContacts();
+                $('#newContactForm')[0].reset();
+                $('#addContactForm').removeClass('show');
+                $('#showAddContactBtn').html('<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
+                showAlert('#addContactAlert', '✅ Contacto agregado exitosamente.', 'success');
+            });
+
+            $('#searchForm').submit(function(e) {
+                e.preventDefault();
+                const query = $('#searchContact').val().toLowerCase();
+                let found = false;
+                $('.contact-item').each(function() {
+                    const text = $(this).text().toLowerCase();
+                    if (text.includes(query)) {
+                        $(this).show();
+                        found = true;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+                if (!found && query) {
+                    showAlert('#alertContainer', `No se encontraron contactos: "${query}"`, 'error');
+                }
+            });
+
+            $('#sendMoneyBtn').click(function() {
+                if (selectedContact === null) {
+                    alert('Selecciona un contacto.');
+                    return;
+                }
+
+                const amount = parseFloat($('#sendAmount').val());
+                if (!amount || amount <= 0) {
+                    alert('Ingresa un monto válido.');
+                    return;
+                }
+
+                if (amount > balance) {
+                    alert(`Saldo insuficiente. Disponible: $${balance.toLocaleString()} CLP`);
+                    return;
+                }
+
+                const contact = contacts[selectedContact];
+                if (confirm(`¿Enviar $${amount.toLocaleString()} CLP a ${contact.nombre}?`)) {
+                    const result = window.Alke.wallet.transferir(contact.nombre, amount);
+                    if (result.ok) {
+                        balance = result.saldo;
+                        $('#currentBalance').text(`$${balance.toLocaleString()} CLP`);
+                        $('#receiverName').text(contact.nombre);
+                        $('#confirmationMessage').addClass('show');
+                        $('.contact-item').removeClass('selected');
+                        selectedContact = null;
+                        $('#amountInputGroup').removeClass('show');
+                        $('#sendMoneyBtn').removeClass('show').prop('disabled', true);
+                        $('#sendAmount').val('');
+
+                        setTimeout(() => {
+                            window.location.href = 'menu.html';
+                        }, 2000);
+                    } else {
+                        alert(result.error);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

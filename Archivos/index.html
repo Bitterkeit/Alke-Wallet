@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alke Wallet · Alke Wallet</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .view:not(.is-active) { display: none !important; }
+    .view.is-active { display: block; }
+    #view-login.is-active { display: flex; }
+  </style>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <section class="view is-active auth-wrap" id="view-login" data-view="login">
+    <div class="auth-card">
+      <h1 class="auth-brand">Alke Wallet</h1>
+      <p class="auth-subtitle">Ingresa a tu cuenta</p>
+      <form id="login-form" novalidate>
+        <div class="mb-3">
+          <label for="login-email" class="form-label">Correo</label>
+          <input type="email" class="form-control" id="login-email" placeholder="tucorreo@alke.cl" autocomplete="username" required>
+        </div>
+        <div class="mb-3">
+          <label for="login-password" class="form-label">Contraseña</label>
+          <input type="password" class="form-control" id="login-password" placeholder="••••••" autocomplete="current-password" required>
+        </div>
+        <div id="login-error" class="alert alert-danger d-none" role="alert"></div>
+        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+      </form>
+      <p class="auth-hint">Demo: <strong>demo@alke.cl</strong> / <strong>123456</strong></p>
+    </div>
+  </section>
+  <div id="app-shell" class="d-none">
+    <nav class="navbar navbar-expand-lg app-navbar mb-4">
+      <div class="container">
+        <a class="navbar-brand app-brand" href="#" data-view="menu">Alke Wallet</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Abrir menú">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="nav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="#" data-view="menu">Inicio</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-view="deposit">Depositar</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-view="sendmoney">Enviar</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-view="transactions">Movimientos</a></li>
+          </ul>
+          <div class="d-flex align-items-center gap-2 flex-wrap py-2 py-lg-0">
+            <button id="btn-save" class="btn btn-warning btn-sm" type="button">Guardar archivo</button>
+            <label class="btn btn-light btn-sm mb-0">Cargar archivo
+              <input type="file" id="file-input" accept=".json,.xml,.txt" hidden>
+            </label>
+            <button id="logout" class="btn btn-outline-light btn-sm" type="button">Salir</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+      <section class="view container app-main" id="view-menu" data-view="menu">
+        <p class="greeting">Hola, <span id="menu-user-name">—</span> 👋</p>
+        <section class="balance-hero" aria-label="Saldo disponible">
+          <span class="balance-label">Saldo disponible</span>
+          <span class="balance-amount js-balance">$ 0</span>
+        </section>
+        <div class="quick-actions">
+          <a href="#" data-view="deposit" class="quick-action"><span>Depositar</span></a>
+          <a href="#" data-view="sendmoney" class="quick-action"><span>Enviar</span></a>
+          <a href="#" data-view="transactions" class="quick-action"><span>Movimientos</span></a>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-4"><div class="summary-card"><span class="summary-num" id="menu-tx-count">0</span><span class="summary-text">Movimientos</span></div></div>
+          <div class="col-12 col-md-4"><div class="summary-card"><span class="summary-num" id="menu-contacts-count">0</span><span class="summary-text">Contactos</span></div></div>
+          <div class="col-12 col-md-4"><div class="summary-card"><span class="summary-num small-num" id="menu-last-movement">—</span><span class="summary-text">Último movimiento</span></div></div>
+        </div>
+      </section>
+      <section class="view container app-main" id="view-deposit" data-view="deposit">
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-7 col-lg-6">
+            <div class="panel">
+              <h1 class="panel-title">Depositar o retirar</h1>
+              <p class="panel-balance">Saldo actual: <strong class="js-balance">$ 0</strong></p>
+              <form id="deposit-form" novalidate>
+                <label for="deposit-amount" class="form-label">Monto</label>
+                <div class="input-group mb-3">
+                  <span class="input-group-text">$</span>
+                  <input type="number" min="1" step="1" class="form-control" id="deposit-amount" placeholder="0" required>
+                </div>
+                <div id="deposit-msg" class="alert d-none" role="alert"></div>
+                <div class="d-flex gap-2">
+                  <button type="button" id="btn-deposit" class="btn btn-primary flex-fill">Depositar</button>
+                  <button type="button" id="btn-withdraw" class="btn btn-outline-primary flex-fill">Retirar</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="view container app-main" id="view-sendmoney" data-view="sendmoney">
+        <div class="row g-4">
+          <div class="col-12 col-lg-7">
+            <div class="panel">
+              <h1 class="panel-title">Enviar dinero</h1>
+              <p class="panel-balance">Saldo actual: <strong class="js-balance">$ 0</strong></p>
+              <form id="send-form" novalidate>
+                <label for="send-contact-search" class="form-label">Para</label>
+                <div class="autocomplete-box mb-3">
+                  <input type="text" class="form-control" id="send-contact-search" placeholder="Busca un contacto..." autocomplete="off">
+                  <div id="send-contact-suggestions" class="list-group autocomplete-list"></div>
+                </div>
+                <label for="send-amount" class="form-label">Monto</label>
+                <div class="input-group mb-3">
+                  <span class="input-group-text">$</span>
+                  <input type="number" min="1" step="1" class="form-control" id="send-amount" placeholder="0" required>
+                </div>
+                <div id="send-msg" class="alert d-none" role="alert"></div>
+                <button type="button" id="btn-send" class="btn btn-primary w-100">Enviar transferencia</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-12 col-lg-5">
+            <div class="panel mb-4">
+              <h2 class="panel-subtitle">Agregar contacto</h2>
+              <div class="mb-2"><input type="text" class="form-control" id="contact-name" placeholder="Nombre"></div>
+              <div class="mb-2"><input type="text" class="form-control" id="contact-account" placeholder="N° de cuenta (ej: CL-1009)"></div>
+              <div id="contact-add-msg" class="alert d-none py-2" role="alert"></div>
+              <button type="button" id="btn-add-contact" class="btn btn-outline-primary btn-sm">Agregar</button>
+            </div>
+            <div class="panel">
+              <h2 class="panel-subtitle">Mis contactos</h2>
+              <ul id="contacts-list" class="contacts-list list-unstyled mb-0"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="view container app-main" id="view-transactions" data-view="transactions">
+        <div class="panel">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h1 class="panel-title mb-0">Últimos movimientos</h1>
+            <span class="panel-balance mb-0">Saldo: <strong class="js-balance">$ 0</strong></span>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle tx-table">
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th class="text-end">Monto</th></tr></thead>
+              <tbody id="transactions-body">
+                <tr id="empty-row"><td colspan="4" class="text-center text-muted py-4">Aún no hay movimientos.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <button id="btn-clear" class="btn btn-link btn-sm text-secondary px-0">Limpiar historial (demo)</button>
+        </div>
+      </section>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/archivo.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/wallet.js"></script>
+  <script src="js/contacts.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

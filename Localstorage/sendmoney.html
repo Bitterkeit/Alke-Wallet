@@ -50,8 +50,11 @@
                         <input type="text" class="form-control" id="newName" placeholder="Nombre y apellido" required>
                     </div>
                     <div class="form-group">
-                        <label>CBU (22 dígitos)</label>
-                        <input type="text" class="form-control" id="newCbu" placeholder="CBU del contacto" required>
+                        <label>CBU (9 dígitos)</label>
+                        <input type="text" class="form-control" id="newCbu" placeholder="Ej: 123456789" maxlength="9" required>
+                        <div class="invalid-feedback" id="cbuError" style="display: none;">
+                            El CBU debe tener exactamente 9 dígitos numéricos.
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Alias</label>
@@ -113,6 +116,7 @@
     <script src="js/main.js"></script>
     <script>
         $(document).ready(function() {
+            // Verificar sesión
             if (localStorage.getItem('isLoggedIn') !== 'true') {
                 window.location.href = 'login.html';
                 return;
@@ -126,25 +130,37 @@
 
             let balance = user.saldo || 0;
             let selectedContact = null;
+            // Usar directamente los contactos del usuario
             let contacts = user.contactos || [];
 
             $('#currentBalance').text(`$${balance.toLocaleString()} CLP`);
 
+            // Función para renderizar contactos
             function renderContacts() {
                 const list = $('#contactList');
                 list.empty();
+
+                // Actualizar la referencia de contactos
+                contacts = user.contactos || [];
+
                 if (contacts.length === 0) {
                     list.html('<p style="color: rgba(255,255,255,0.3); font-size: 14px;">Aún no tienes contactos.</p>');
                     return;
                 }
+
                 contacts.forEach((c, index) => {
+                    const cbuDisplay = c.cuenta || c.cbu || 'N/A';
+                    const aliasDisplay = c.alias || 'N/A';
+                    const bancoDisplay = c.banco || 'Sin banco';
+
                     const item = $(`
                         <div class="contact-item" data-index="${index}">
                             <div class="contact-name">${c.nombre}</div>
-                            <div class="contact-details">CBU: ${c.cuenta || 'N/A'} | Alias: ${c.alias || 'N/A'}</div>
-                            <span class="contact-bank"><i class="fas fa-university"></i> ${c.banco || 'Sin banco'}</span>
+                            <div class="contact-details">CBU: ${cbuDisplay} | Alias: ${aliasDisplay}</div>
+                            <span class="contact-bank"><i class="fas fa-university"></i> ${bancoDisplay}</span>
                         </div>
                     `);
+
                     item.click(function() {
                         $('.contact-item').removeClass('selected');
                         item.addClass('selected');
@@ -154,12 +170,15 @@
                         $('#sendAmount').focus();
                         $('#confirmationMessage').removeClass('show');
                     });
+
                     list.append(item);
                 });
             }
 
+            // Renderizar contactos iniciales
             renderContacts();
 
+            // Función para mostrar alertas
             function showAlert(container, message, type) {
                 const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
                 const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
@@ -173,11 +192,14 @@
                 }, 4000);
             }
 
+            // Mostrar/ocultar formulario de agregar contacto
             $('#showAddContactBtn').click(function() {
                 $('#addContactForm').toggleClass('show');
                 $(this).text($('#addContactForm').hasClass('show') ? '✕ Cerrar' : '<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
                 if (!$('#addContactForm').hasClass('show')) {
                     $('#newContactForm')[0].reset();
+                    $('.form-control').removeClass('is-invalid');
+                    $('#cbuError').hide();
                 }
             });
 
@@ -185,35 +207,100 @@
                 $('#addContactForm').removeClass('show');
                 $('#showAddContactBtn').html('<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
                 $('#newContactForm')[0].reset();
+                $('.form-control').removeClass('is-invalid');
+                $('#cbuError').hide();
             });
 
+            // Validar CBU (9 dígitos)
+            function validateCBU(cbu) {
+                return /^\d{9}$/.test(cbu);
+            }
+
+            // Agregar contacto - CORREGIDO (sin duplicación)
             $('#newContactForm').submit(function(e) {
                 e.preventDefault();
+
                 const name = $('#newName').val().trim();
                 const cbu = $('#newCbu').val().trim();
                 const alias = $('#newAlias').val().trim();
                 const bank = $('#newBank').val().trim();
 
-                if (!name || !cbu || !alias || !bank) {
-                    showAlert('#addContactAlert', 'Completa todos los campos.', 'error');
+                let isValid = true;
+
+                // Validar nombre
+                if (!name) {
+                    $('#newName').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#newName').removeClass('is-invalid');
+                }
+
+                // Validar CBU (9 dígitos)
+                if (!cbu || !validateCBU(cbu)) {
+                    $('#newCbu').addClass('is-invalid');
+                    $('#cbuError').show();
+                    isValid = false;
+                } else {
+                    $('#newCbu').removeClass('is-invalid');
+                    $('#cbuError').hide();
+                }
+
+                // Validar alias
+                if (!alias) {
+                    $('#newAlias').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#newAlias').removeClass('is-invalid');
+                }
+
+                // Validar banco
+                if (!bank) {
+                    $('#newBank').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#newBank').removeClass('is-invalid');
+                }
+
+                if (!isValid) {
+                    showAlert('#addContactAlert', 'Completa todos los campos correctamente.', 'error');
                     return;
                 }
 
-                const newContact = { nombre: name, cuenta: cbu, alias: alias, banco: bank };
-                contacts.push(newContact);
+                // Crear el nuevo contacto
+                const newContact = {
+                    nombre: name,
+                    cuenta: cbu,
+                    alias: alias,
+                    banco: bank
+                };
+
+                // Agregar usando la función de contacts.js (SOLO UNA VEZ)
                 window.Alke.contacts.agregar(name, cbu);
 
-                renderContacts();
+                // Actualizar la referencia de contactos
+                contacts = user.contactos || [];
+
+                // Limpiar campos
                 $('#newContactForm')[0].reset();
+                $('.form-control').removeClass('is-invalid');
+                $('#cbuError').hide();
+
+                // Ocultar formulario
                 $('#addContactForm').removeClass('show');
                 $('#showAddContactBtn').html('<i class="fas fa-user-plus" style="margin-right:8px;"></i>Agregar contacto');
+
+                // Renderizar la lista actualizada
+                renderContacts();
+
                 showAlert('#addContactAlert', '✅ Contacto agregado exitosamente.', 'success');
             });
 
+            // Buscar contacto
             $('#searchForm').submit(function(e) {
                 e.preventDefault();
                 const query = $('#searchContact').val().toLowerCase();
                 let found = false;
+
                 $('.contact-item').each(function() {
                     const text = $(this).text().toLowerCase();
                     if (text.includes(query)) {
@@ -223,11 +310,13 @@
                         $(this).hide();
                     }
                 });
+
                 if (!found && query) {
                     showAlert('#alertContainer', `No se encontraron contactos: "${query}"`, 'error');
                 }
             });
 
+            // Enviar dinero
             $('#sendMoneyBtn').click(function() {
                 if (selectedContact === null) {
                     alert('Selecciona un contacto.');
@@ -246,6 +335,11 @@
                 }
 
                 const contact = contacts[selectedContact];
+                if (!contact) {
+                    alert('Contacto no encontrado.');
+                    return;
+                }
+
                 if (confirm(`¿Enviar $${amount.toLocaleString()} CLP a ${contact.nombre}?`)) {
                     const result = window.Alke.wallet.transferir(contact.nombre, amount);
                     if (result.ok) {
@@ -253,6 +347,8 @@
                         $('#currentBalance').text(`$${balance.toLocaleString()} CLP`);
                         $('#receiverName').text(contact.nombre);
                         $('#confirmationMessage').addClass('show');
+
+                        // Limpiar selección
                         $('.contact-item').removeClass('selected');
                         selectedContact = null;
                         $('#amountInputGroup').removeClass('show');
@@ -265,6 +361,15 @@
                     } else {
                         alert(result.error);
                     }
+                }
+            });
+
+            // Validar CBU en tiempo real (solo números y máximo 9 dígitos)
+            $('#newCbu').on('input', function() {
+                this.value = this.value.replace(/\D/g, '').slice(0, 9);
+                if (this.value.length === 9) {
+                    $(this).removeClass('is-invalid');
+                    $('#cbuError').hide();
                 }
             });
         });
